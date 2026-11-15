@@ -1,3 +1,6 @@
 models/
 third_party/
 *.msi
+*.exe
+*.iso
+cmake-*
