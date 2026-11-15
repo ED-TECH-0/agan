@@ -61,5 +61,4 @@ Apache-2.0 for code. Weights and data under licenses compatible with all inputs 
 
 ## Related Projects
 - **DESKHUB** — agan becomes its reasoning core
-- **Hermes** — owner's personal build agent (not part of the product)
 - **Antigravity** — agentic IDE used for building
