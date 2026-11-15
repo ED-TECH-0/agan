@@ -1,0 +1,22 @@
+# Max Profile — 24 GB+ GPU or workstation
+profile: max
+core_model:
+  size_range: "14B-32B+"
+  quantization: "Q4_K_M"
+  max_adapters: 8
+retrieval:
+  embedding_model: "large"
+  reranker: "large"
+  max_chunks: 12
+  cache_size_mb: 2000
+context:
+  max_tokens: 32768
+  verification_loops: 6
+modes:
+  - deep
+  - multi_sample
+governor:
+  vram_limit_mb: 24576
+  ram_limit_mb: 48000
+  yield_on_heavy_apps: true
+  boost_when_idle: true

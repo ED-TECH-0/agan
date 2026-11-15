@@ -1,0 +1,22 @@
+# Standard Profile — 16 GB RAM or 6–8 GB GPU
+profile: standard
+core_model:
+  size_range: "4B-8B"
+  quantization: "Q4_K_M"
+  max_adapters: 3
+retrieval:
+  embedding_model: "small"
+  reranker: "small"
+  max_chunks: 6
+  cache_size_mb: 500
+context:
+  max_tokens: 8192
+  verification_loops: 3
+modes:
+  - fast
+  - deep
+governor:
+  vram_limit_mb: 6144
+  ram_limit_mb: 12000
+  yield_on_heavy_apps: true
+  boost_when_idle: true

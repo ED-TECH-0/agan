@@ -1,0 +1,22 @@
+# Nano Profile — CPU only, 4–8 GB RAM
+profile: nano
+core_model:
+  size_range: "0.6B-1.7B"
+  quantization: "Q4_K_M"
+  max_adapters: 1
+retrieval:
+  embedding_model: "tiny"
+  reranker: false
+  max_chunks: 3
+  cache_size_mb: 50
+context:
+  max_tokens: 2048
+  verification_loops: 1
+modes:
+  - fast
+  - deep_limited
+governor:
+  vram_limit_mb: 0
+  ram_limit_mb: 3000
+  yield_on_heavy_apps: true
+  boost_when_idle: false

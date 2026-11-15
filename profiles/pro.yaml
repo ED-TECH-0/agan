@@ -1,0 +1,21 @@
+# Pro Profile — 12–16 GB GPU or 32 GB RAM
+profile: pro
+core_model:
+  size_range: "8B-14B"
+  quantization: "Q4_K_M"
+  max_adapters: 5
+retrieval:
+  embedding_model: "medium"
+  reranker: "medium"
+  max_chunks: 8
+  cache_size_mb: 1000
+context:
+  max_tokens: 16384
+  verification_loops: 4
+modes:
+  - deep
+governor:
+  vram_limit_mb: 12288
+  ram_limit_mb: 24000
+  yield_on_heavy_apps: true
+  boost_when_idle: true

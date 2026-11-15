@@ -1,0 +1,48 @@
+# Skill Pack Template
+# Copy this directory and customize for each domain
+
+name: "template"
+version: "0.1.0"
+description: "Template skill pack"
+base_model: "standard"  # which profile's base model this adapter targets
+license: "Apache-2.0"
+
+# Adapter configuration
+adapter:
+  type: "lora"
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+
+# Training data
+data:
+  sft_traces: 1000
+  dpo_pairs: 500
+  rl_tasks: 200
+
+# Tool bridges this pack needs
+tools:
+  - "search"
+  - "fetch"
+  - "python"
+
+# Domain-specific tools
+domain_tools: []
+
+# Retrieval profile
+retrieval:
+  source_types: ["web", "docs"]
+  trusted_domains: []
+  version_aware: true
+
+# Evaluation
+eval:
+  tasks: 50
+  pass_threshold: 0.8
+
+# Verification
+verification:
+  executable_checks: true
+  lint_checks: true
+  test_checks: true

@@ -1,0 +1,22 @@
+# Lite Profile — 8–16 GB RAM, integrated or weak GPU
+profile: lite
+core_model:
+  size_range: "1.7B-4B"
+  quantization: "Q4_K_M"
+  max_adapters: 2
+retrieval:
+  embedding_model: "small"
+  reranker: "tiny"
+  max_chunks: 4
+  cache_size_mb: 200
+context:
+  max_tokens: 4096
+  verification_loops: 2
+modes:
+  - fast
+  - deep
+governor:
+  vram_limit_mb: 2048
+  ram_limit_mb: 6000
+  yield_on_heavy_apps: true
+  boost_when_idle: true
