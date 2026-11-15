@@ -1,0 +1,240 @@
+[
+  {
+    "id": "code_001",
+    "category": "code",
+    "question": "Write a Python function to compute the nth Fibonacci number using memoization",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "fib(10) == 55 and fib(0) == 0 and fib(1) == 1"}
+  },
+  {
+    "id": "code_002",
+    "category": "code",
+    "question": "Write a Python context manager that times a code block and prints the elapsed time",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "import time; with Timer(): time.sleep(0.01)"}
+  },
+  {
+    "id": "code_003",
+    "category": "code",
+    "question": "Implement a binary search function that returns the index of target in sorted list, or -1 if not found",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "binary_search([1,2,3,4,5], 3) == 2 and binary_search([1,2,3], 4) == -1"}
+  },
+  {
+    "id": "code_004",
+    "category": "code",
+    "question": "Write a Python decorator that retries a function up to 3 times with exponential backoff",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "@retry(max_attempts=3)\ndef flaky(): raise ValueError()"}
+  },
+  {
+    "id": "code_005",
+    "category": "code",
+    "question": "Create a dataclass for a 3D vector with x, y, z floats and methods for magnitude and normalization",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "v = Vec3(3,4,0); abs(v.magnitude() - 5.0) < 0.001"}
+  },
+  {
+    "id": "code_006",
+    "category": "code",
+    "question": "Write a function to parse a simple CSV string (no quoted fields) into list of dicts",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "parse_csv('a,b\\n1,2') == [{'a': '1', 'b': '2'}]"}
+  },
+  {
+    "id": "code_007",
+    "category": "code",
+    "question": "Implement a LRU cache class with get and put methods using OrderedDict",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "cache = LRUCache(2); cache.put(1,1); cache.put(2,2); cache.get(1) == 1"}
+  },
+  {
+    "id": "code_008",
+    "category": "code",
+    "question": "Write a function to flatten a nested dictionary with dot-separated keys",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "flatten({'a': {'b': 1}}) == {'a.b': 1}"}
+  },
+  {
+    "id": "code_009",
+    "category": "code",
+    "question": "Create a simple HTTP server using http.server that serves files from current directory",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "import subprocess; p = subprocess.Popen(['python', '-m', 'http.server', '0'])"}
+  },
+  {
+    "id": "code_010",
+    "category": "code",
+    "question": "Write a function to validate JSON against a JSON schema using jsonschema library",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "validate({'name': 'test'}, {'type': 'object', 'properties': {'name': {'type': 'string'}}})"}
+  },
+  {
+    "id": "blender_001",
+    "category": "blender",
+    "question": "Create a Blender bpy script to add a cube at origin (0,0,0) with size 2",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.mesh.primitive_cube_add(size=2, location=(0,0,0))"}
+  },
+  {
+    "id": "blender_002",
+    "category": "blender",
+    "question": "Write a Blender script to create a UV sphere with 32 segments and 16 rings at location (5,0,0)",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, location=(5,0,0))"}
+  },
+  {
+    "id": "blender_003",
+    "category": "blender",
+    "question": "Create a Blender script that adds a plane, scales it to 10x10, and applies a simple principled BSDF material with red color",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.mesh.primitive_plane_add(size=10)"}
+  },
+  {
+    "id": "blender_004",
+    "category": "blender",
+    "question": "Write a script to create a camera at (0, -10, 5) pointing at origin with 50mm lens",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.object.camera_add(location=(0,-10,5))"}
+  },
+  {
+    "id": "blender_005",
+    "category": "blender",
+    "question": "Create a Blender script to add a point light at (0, 0, 5) with energy 1000 and color white",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.object.light_add(type='POINT', location=(0,0,5))"}
+  },
+  {
+    "id": "blender_006",
+    "category": "blender",
+    "question": "Write a script that creates a collection named 'MyAssets' and moves all mesh objects into it",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "col = bpy.data.collections.new('MyAssets')"}
+  },
+  {
+    "id": "blender_007",
+    "category": "blender",
+    "question": "Create a script to apply a subdivision surface modifier with 2 levels to the active object",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "mod = obj.modifiers.new(name='Subdiv', type='SUBSURF'); mod.levels = 2"}
+  },
+  {
+    "id": "blender_008",
+    "category": "blender",
+    "question": "Write a Blender script to render the current scene to /tmp/render.png at 1920x1080",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.context.scene.render.filepath = '/tmp/render.png'"}
+  },
+  {
+    "id": "blender_009",
+    "category": "blender",
+    "question": "Create a script that adds a Bezier curve with 3 points forming a smooth arc",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.curve.primitive_bezier_curve_add()"}
+  },
+  {
+    "id": "blender_010",
+    "category": "blender",
+    "question": "Write a script to create an empty object at (0,0,0) and parent all selected objects to it",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0,0,0))"}
+  },
+  {
+    "id": "fact_001",
+    "category": "fact",
+    "question": "What is the latest stable version of Python as of 2024?",
+    "expected_type": "fact",
+    "verification": {"type": "claim", "claims": ["Python version number", "release date"]}
+  },
+  {
+    "id": "fact_002",
+    "category": "fact",
+    "question": "What are the key new features in Blender 4.2 LTS?",
+    "expected_type": "fact",
+    "verification": {"type": "claim", "claims": ["Blender 4.2 features", "LTS release"]}
+  },
+  {
+    "id": "fact_003",
+    "category": "fact",
+    "question": "What is the current CUDA version supported by PyTorch 2.4?",
+    "expected_type": "fact",
+    "verification": {"type": "claim", "claims": ["PyTorch 2.4", "CUDA version"]}
+  },
+  {
+    "id": "fact_004",
+    "category": "fact",
+    "question": "What are the system requirements for Unreal Engine 5.4?",
+    "expected_type": "fact",
+    "verification": {"type": "claim", "claims": ["Unreal Engine 5.4", "system requirements"]}
+  },
+  {
+    "id": "fact_005",
+    "category": "fact",
+    "question": "What is the latest Rust stable version and its key features?",
+    "expected_type": "fact",
+    "verification": {"type": "claim", "claims": ["Rust version", "features"]}
+  },
+  {
+    "id": "howto_001",
+    "category": "howto",
+    "question": "How to set up a Python virtual environment and install packages from requirements.txt",
+    "expected_type": "howto",
+    "verification": {"type": "claim", "claims": ["venv creation", "pip install", "requirements.txt"]}
+  },
+  {
+    "id": "howto_002",
+    "category": "howto",
+    "question": "How to create a GitHub Actions workflow that runs pytest on push",
+    "expected_type": "howto",
+    "verification": {"type": "claim", "claims": ["GitHub Actions", "pytest", "workflow yaml"]}
+  },
+  {
+    "id": "howto_003",
+    "category": "howto",
+    "question": "How to configure VS Code for Python development with type checking",
+    "expected_type": "howto",
+    "verification": {"type": "claim", "claims": ["VS Code", "Python", "mypy", "pylance"]}
+  },
+  {
+    "id": "design_001",
+    "category": "design",
+    "question": "Design a simple REST API for a todo list application with CRUD operations",
+    "expected_type": "design",
+    "verification": {"type": "claim", "claims": ["REST endpoints", "CRUD", "data model"]}
+  },
+  {
+    "id": "design_002",
+    "category": "design",
+    "question": "Design a database schema for a blog platform with users, posts, comments, and tags",
+    "expected_type": "design",
+    "verification": {"type": "claim", "claims": ["tables", "relationships", "foreign keys", "indexes"]}
+  },
+  {
+    "id": "compare_001",
+    "category": "comparison",
+    "question": "Compare PyTorch vs JAX for machine learning research",
+    "expected_type": "comparison",
+    "verification": {"type": "claim", "claims": ["PyTorch pros/cons", "JAX pros/cons", "ecosystem", "performance"]}
+  },
+  {
+    "id": "compare_002",
+    "category": "comparison",
+    "question": "Compare Blender vs Maya for indie game asset creation",
+    "expected_type": "comparison",
+    "verification": {"type": "claim", "claims": ["Blender features", "Maya features", "cost", "learning curve"]}
+  },
+  {
+    "id": "sysarch_001",
+    "category": "sysarch",
+    "question": "Design a scalable architecture for a real-time chat application supporting 100k concurrent users",
+    "expected_type": "design",
+    "verification": {"type": "claim", "claims": ["WebSocket", "message broker", "horizontal scaling", "presence"]}
+  },
+  {
+    "id": "hwarch_001",
+    "category": "hwarch",
+    "question": "Write a Verilog module for a 4-bit synchronous counter with async reset",
+    "expected_type": "code",
+    "verification": {"type": "executable", "check": "module counter4(input clk, input rst, output reg [3:0] q); always @(posedge clk or posedge rst) if (rst) q <= 0; else q <= q + 1; endmodule"}
+  }
+]

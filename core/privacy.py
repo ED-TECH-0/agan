@@ -37,7 +37,7 @@ SECRET_PATTERNS = [
     # MAC addresses
     (r'\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b', "mac_address"),
     # Home directory paths
-    (r'(/home/[^\s"\']+|/Users/[^\s"\']+|C:\Users\[^\s"\']+)', "home_path"),
+        (r'(/home/[^\s"\']+|/Users/[^\s"\']+|C:\\\\Users\\\\[^\s"\']+)', "home_path"),
     # Usernames in URLs
     (r'https?://([^:/@\s]+)@', "url_credentials"),
 ]

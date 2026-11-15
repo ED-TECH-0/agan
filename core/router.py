@@ -37,9 +37,13 @@ DEEP_KEYWORDS = [
 ACTION_KEYWORDS = [
     "run", "execute", "install", "create file", "write file",
     "delete", "modify", "edit", "refactor", "rename",
-    "commit", "push", "pull", "build", "compile", "test",
+    "commit", "push", "pull", "build", "compile",
     "render", "simulate", "lint", "format"
 ]
+
+# Keywords that need word-boundary matching (single words)
+ACTION_KEYWORDS_WB = ["run", "execute", "install", "delete", "modify", "edit", "refactor", "rename",
+    "commit", "push", "pull", "build", "compile", "render", "simulate", "lint", "format"]
 
 DIRECT_PATTERNS = [
     r"^(hi|hello|hey|thanks|thank you|ok|okay|yes|no)\.?$",
@@ -54,10 +58,16 @@ def classify_route(message: str, profile: str = "standard") -> RouteDecision:
         if re.match(pat, msg_lower, re.IGNORECASE):
             return RouteDecision(RouteType.DIRECT, 0.9, "Simple direct interaction")
     
-    # Action: system/app operations
+    # Action: system/app operations - use word boundaries for single words
     for kw in ACTION_KEYWORDS:
-        if kw in msg_lower:
-            return RouteDecision(RouteType.ACTION, 0.8, f"Action keyword: {kw}")
+        if " " in kw:
+            # Multi-word phrase: exact substring match
+            if kw in msg_lower:
+                return RouteDecision(RouteType.ACTION, 0.8, f"Action keyword: {kw}")
+        else:
+            # Single word: word boundary match
+            if re.search(rf"\b{re.escape(kw)}\b", msg_lower):
+                return RouteDecision(RouteType.ACTION, 0.8, f"Action keyword: {kw}")
     
     # Deep: multi-part research/design
     deep_score = sum(1 for kw in DEEP_KEYWORDS if kw in msg_lower)
