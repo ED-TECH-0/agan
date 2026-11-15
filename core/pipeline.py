@@ -14,6 +14,7 @@ from core.reasoner import Reasoner
 from core.verifier import Verifier
 from core.writer import Writer
 from core.safety import SafetySanitizer
+from core.llm_client import ModelManager, LLMClient
 
 @dataclass
 class PipelineConfig:
@@ -23,16 +24,27 @@ class PipelineConfig:
 class Pipeline:
     def __init__(self, config: PipelineConfig = None):
         self.config = config or PipelineConfig()
+        self.model_mgr = ModelManager()
         self.governor = ResourceGovernor()
         self.router = classify_route
         self.planner = make_plan
         self.retriever = Retriever()
         self.reranker = Reranker()
         self.compressor = Compressor()
-        self.reasoner = Reasoner()
-        self.verifier = Verifier(self.governor.current_profile().__dict__ if hasattr(self.governor, 'current_profile') else {})
         self.writer = Writer()
         self.safety = SafetySanitizer()
+        
+        # Initialize LLM-backed components
+        self._init_llm_components()
+    
+    def _init_llm_components(self):
+        profile_name = self.config.profile.value
+        client = self.model_mgr.get_client(profile_name)
+        self.reasoner = Reasoner(client=client)
+        self.verifier = Verifier(
+            profile_config=self.governor.current_profile().__dict__,
+            client=client
+        )
     
     async def answer(self, question: str) -> str:
         profile = self.governor.current_profile()
@@ -41,7 +53,8 @@ class Pipeline:
         # Route
         route_decision = self.router(question, profile_name.value)
         if route_decision.route == RouteType.DIRECT:
-            return self.reasoner.synthesize(question, "").answer
+            result = await self.reasoner.synthesize(question, "")
+            return result.answer
         
         # Plan
         plan = self.planner(question, profile_name.value)
@@ -68,11 +81,14 @@ class Pipeline:
         
         # Reason + verify loop
         for attempt in range(self.config.max_loops):
-            draft_output = self.reasoner.synthesize(question, evidence, plan.skillpack)
+            draft_output = await self.reasoner.synthesize(question, evidence, plan.skillpack)
             report = self.verifier.check(draft_output.answer, evidence)
             
             if report.ok:
-                return self.writer.finalize(draft_output.answer, evidence, draft_output.citations).answer
+                return self.writer.finalize(draft_output.answer, evidence, [
+                    {"claim": c.text, "source_id": c.source_id, "passage": c.passage}
+                    for c in draft_output.claims
+                ]).answer
             
             # Repair: search for missing info
             if report.missing_query:
@@ -88,12 +104,18 @@ class Pipeline:
             draft_output.answer, evidence,
             report.unsupported_claims, report.execution_errors
         ).answer
+    
+    async def close(self):
+        await self.model_mgr.close_all()
 
 async def main():
     pipeline = Pipeline()
-    question = "How do I create a cube in Blender using bpy?"
-    answer = await pipeline.answer(question)
-    print(answer)
+    try:
+        question = "How do I create a cube in Blender using bpy?"
+        answer = await pipeline.answer(question)
+        print(answer)
+    finally:
+        await pipeline.close()
 
 if __name__ == "__main__":
     asyncio.run(main())

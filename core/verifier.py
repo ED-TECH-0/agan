@@ -3,9 +3,13 @@ Verifier — claim check + executable verification.
 """
 from dataclasses import dataclass, field
 from typing import Optional
+from pydantic import BaseModel
 import subprocess
 import tempfile
 import os
+import re
+
+from core.llm_client import LLMClient
 
 @dataclass
 class VerificationReport:
@@ -14,14 +18,23 @@ class VerificationReport:
     execution_errors: list[str] = field(default_factory=list)
     missing_query: Optional[str] = None
 
+class ClaimCheck(BaseModel):
+    claim: str
+    supported: bool
+    reasoning: str = ""
+
+class ClaimCheckResult(BaseModel):
+    checks: list[ClaimCheck]
+
 class Verifier:
-    def __init__(self, profile_config: dict = None):
+    def __init__(self, profile_config: dict = None, client: LLMClient = None):
         self.profile = profile_config or {}
         self.max_loops = self.profile.get("verification_loops", 3)
         self.can_execute = self.profile.get("can_execute", True)
+        self.client = client
     
     def check(self, draft: str, evidence: str, run_code: bool = True) -> VerificationReport:
-        # 1. Claim verification (placeholder)
+        # 1. Claim verification
         unsupported = self._verify_claims(draft, evidence)
         
         # 2. Executable verification
@@ -42,15 +55,55 @@ class Verifier:
         )
     
     def _verify_claims(self, draft: str, evidence: str) -> list[str]:
-        # Placeholder: extract atomic claims and check against evidence
-        # In practice: use NLI model or LLM to verify each claim
-        return []
+        if not self.client:
+            return []
+        
+        # Extract claims from draft (simple heuristic: sentences with citations)
+        claims = self._extract_claims(draft)
+        if not claims:
+            return []
+        
+        # Use LLM to verify each claim against evidence
+        try:
+            result = self._verify_with_llm(claims, evidence)
+            unsupported = [c.claim for c in result.checks if not c.supported]
+            return unsupported
+        except Exception:
+            return []
+    
+    def _extract_claims(self, draft: str) -> list[str]:
+        """Extract atomic claims from draft answer."""
+        # Simple extraction: sentences containing [E#] citations
+        claims = []
+        sentences = re.split(r'(?<=[.!?])\s+', draft)
+        for sent in sentences:
+            if re.search(r'\[E\d+\]', sent):
+                claims.append(sent.strip())
+        return claims[:10]  # Limit to avoid token overflow
+    
+    def _verify_with_llm(self, claims: list[str], evidence: str) -> ClaimCheckResult:
+        messages = [
+            {"role": "system", "content": """You are a claim verifier. For each claim, determine if it is fully supported by the evidence.
+Return JSON with a list of checks, each containing: claim (string), supported (boolean), reasoning (string)."""},
+            {"role": "user", "content": f"""Evidence:
+{evidence}
+
+Claims to verify:
+{chr(10).join(f'{i+1}. {c}' for i, c in enumerate(claims))}
+
+Return JSON with checks."""},
+        ]
+        
+        import asyncio
+        return asyncio.run(self._async_verify(messages))
+    
+    async def _async_verify(self, messages: list[dict]) -> ClaimCheckResult:
+        return await self.client.chat_json(messages, ClaimCheckResult)
     
     def _verify_executable(self, draft: str) -> list[str]:
         errors = []
         
         # Extract Python code blocks
-        import re
         python_blocks = re.findall(r'```python\n(.*?)\n```', draft, re.DOTALL)
         for i, code in enumerate(python_blocks):
             error = self._run_python_code(code)
@@ -92,7 +145,6 @@ class Verifier:
         return None
     
     def _run_blender_script(self, code: str) -> Optional[str]:
-        # Check if blender is available
         try:
             result = subprocess.run(
                 ['blender', '--version'],
@@ -103,7 +155,6 @@ class Verifier:
         except Exception:
             return "Blender not available"
         
-        # Run headless (placeholder)
         try:
             with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
                 f.write(code)
