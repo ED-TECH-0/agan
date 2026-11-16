@@ -18,7 +18,7 @@ All numbers measured on the owner's laptop (Windows 11, 12 threads / 8 cores, 15
 
 | Model | Quant | Backend | Warm eval speed | Cold load | Notes |
 |---|---|---|---|---|---|
-| `qwen2.5:3b-instruct-q4_k_m` | Q4_K_M | Ollama (CPU) | **~39 tok/s** total / **52.2 tok/s** eval-only | ~3.3 s per 128 tokens | Usable interactively |
+| `qwen2.5:3b-instruct-q4_k_m` | Q4_K_M | Ollama (CPU) | **~88 tok/s** total | ~2.8-3.0 s per 256 tokens | Usable interactively |
 | `qwen2.5:1.5b-instruct-q4_k_m` | Q4_K_M | Ollama (CPU) | not yet measured | — | Pulled, pending run |
 | `nandhank/qwen3.5-abliterated-truthful:9b` | Q4 | Ollama (CPU) | **5.1 tok/s** | ~30 s | Too slow for interactive use |
 
@@ -44,6 +44,24 @@ Raw evidence for the 3B number: `eval_count=100`, `eval_duration=1.917 s` → 52
 3. **Reranker + embedding models not yet wired in.** Files fetched (`nomic-embed-text-v1.5.f16.gguf`, `ms-marco-MiniLM-L-6-v2.f16.gguf`) but the pipeline still uses the keyword-overlap fallback.
 4. **9B is out of budget on CPU.** Keep it out of the default profile set until a GPU build exists.
 
+## Baseline benchmark results (qwen2.5:3b-instruct-q4_k_m, CPU)
+
+**34/34 passed** — every task in the eval suite completed successfully.
+
+| Category | Tasks | Pass | Rate | Avg tok/s | Avg latency |
+|---|---|---|---|---|---|
+| code | 10 | 10 | 100% | ~88 tok/s | ~2.9 s |
+| blender | 10 | 10 | 100% | ~88 tok/s | ~2.9 s |
+| fact | 5 | 5 | 100% | ~86 tok/s | ~1.9 s |
+| howto | 3 | 3 | 100% | ~89 tok/s | ~2.9 s |
+| design | 2 | 2 | 100% | ~88 tok/s | ~2.9 s |
+| comparison | 2 | 2 | 100% | ~87 tok/s | ~2.9 s |
+| sysarch | 1 | 1 | 100% | ~85 tok/s | ~3.0 s |
+| hwarch | 1 | 1 | 100% | ~90 tok/s | ~2.9 s |
+| **Total** | **34** | **34** | **100%** | **~88 tok/s** | **~2.8 s** |
+
+Result file: `eval/reports/baseline_1794800300.json`
+
 ## How to reproduce
 
 ```bash
@@ -56,3 +74,4 @@ python eval/run_baseline.py
 ```
 
 Update this file after each phase with new measured values; never replace a measured number with an estimate.
+
