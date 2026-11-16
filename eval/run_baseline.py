@@ -25,7 +25,7 @@ class BenchmarkResult:
     answer_preview: str
     error: str = ""
 
-async def run_task(client: httpx.AsyncClient, model: str, task, max_tokens: int = 512) -> BenchmarkResult:
+async def run_task(client: httpx.AsyncClient, model: str, task, max_tokens: int = 256) -> BenchmarkResult:
     """Run a single task against a model."""
     url = f"{OLLAMA_URL}/api/chat"
     payload = {
@@ -69,7 +69,7 @@ async def run_task(client: httpx.AsyncClient, model: str, task, max_tokens: int 
             error=str(e),
         )
 
-async def benchmark_model(model: str, tasks: list, max_tokens: int = 512) -> list[BenchmarkResult]:
+async def benchmark_model(model: str, tasks: list, max_tokens: int = 256) -> list[BenchmarkResult]:
     """Run all tasks against a model."""
     async with httpx.AsyncClient(base_url=OLLAMA_URL, timeout=180.0) as client:
         # Warmup
@@ -98,7 +98,7 @@ async def main():
         tasks = json.load(f)
     
     # Models to test
-    models = ["qwen2.5:3b-instruct-q4_k_m", "nandhank/qwen3.5-abliterated-truthful:9b"]
+    models = ["qwen2.5:3b-instruct-q4_k_m"]
     
     all_results = {}
     
