@@ -173,7 +173,7 @@ class TraceGenerator:
             plan=asdict(plan),
             evidence=[{"id": r.chunk_id, "text": r.text, "score": r.score, "source_id": r.source_id} for r in ranked],
             answer=draft.answer,
-            citations=[{"claim": c.text, "source_id": c.source_id, "passage": c.passage} for c in draft.citations],
+            citations=[{"claim": c.text, "source_id": c.source_id, "passage": c.passage} for c in draft.claims],
             skillpack=skillpack,
             created_at=datetime.now(timezone.utc).isoformat(),
         )
