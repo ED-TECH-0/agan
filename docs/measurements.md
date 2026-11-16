@@ -18,7 +18,7 @@ All numbers measured on the owner's laptop (Windows 11, 12 threads / 8 cores, 15
 
 | Model | Quant | Backend | Warm eval speed | Cold load | Notes |
 |---|---|---|---|---|---|
-| `qwen2.5:3b-instruct-q4_k_m` | Q4_K_M | Ollama (CPU) | **52.2 tok/s** | ~41 s first call | Usable interactively |
+| `qwen2.5:3b-instruct-q4_k_m` | Q4_K_M | Ollama (CPU) | **~39 tok/s** total / **52.2 tok/s** eval-only | ~3.3 s per 128 tokens | Usable interactively |
 | `qwen2.5:1.5b-instruct-q4_k_m` | Q4_K_M | Ollama (CPU) | not yet measured | — | Pulled, pending run |
 | `nandhank/qwen3.5-abliterated-truthful:9b` | Q4 | Ollama (CPU) | **5.1 tok/s** | ~30 s | Too slow for interactive use |
 
