@@ -36,7 +36,7 @@ class ComputeCascade:
         self.verifier = verifier
         self.tools = tools
         self.sandbox = sandbox
-        self.time_budget_s = profile.time_budget_s.get(profile.level.value, 45)
+        self.time_budget_s = profile.time_budget
 
     async def solve(self, question: str, plan: Plan) -> CascadeResult:
         """Run the cascade to find an answer."""
@@ -44,7 +44,7 @@ class ComputeCascade:
         level = self._initial_level(question, plan)
         last_result = None
 
-        while level <= self.profile.max_level and time.monotonic() - t0 < self.time_budget_s:
+        while level <= self.profile.level and time.monotonic() - t0 < self.time_budget_s:
             last_result = await self._run_level(level, question, plan)
 
             if last_result.verifier_ok:
@@ -123,7 +123,7 @@ class ComputeCascade:
 
     async def _level_l2_code_think(self, question: str, plan: Plan) -> CascadeResult:
         """L2: Think-in-code + best-of-N with checks."""
-        n = self.profile.best_of_n.get(level, 3)
+        n = self.profile.best_of_n
 
         candidates = []
         for i in range(n):
