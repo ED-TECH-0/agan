@@ -123,7 +123,7 @@ class EvalHarness:
         print(f"Saved results to {path}")
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 @ pytest.mark.integration
 async def test_b0_truthfulqa():
     harness = EvalHarness(Path("eval/reports"))
@@ -133,7 +133,7 @@ async def test_b0_truthfulqa():
     assert any(r.name == "B0_hallucination_rate" and r.passed for r in harness.results)
 
 
-@ pytest.mark.asyncio
+@pytest.mark.asyncio
 @ pytest.mark.integration
 async def test_b1_citation_precision():
     harness = EvalHarness(Path("eval/reports"))

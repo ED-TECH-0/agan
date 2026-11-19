@@ -12,7 +12,9 @@ from agan.llm.client import LLMClient
 from agan.pipeline.router import Router
 from agan.pipeline.planner import Planner
 from agan.pipeline.reasoner import Reasoner
-from agan.pipeline.verifier import Verifier
+from agan.pipeline.verifier import Verifier, VerifierReport
+from agan.pipeline.writer import Writer
+from agan.privacy.firewall import OutboundGateway
 from agan.schemas import Answer, Plan, Route
 
 app = typer.Typer(add_completion=False)
@@ -28,8 +30,21 @@ class AGAN:
         self.planner = Planner(self.client)
         self.reasoner = Reasoner(self.client, get_spec(self.profile))
         self.verifier = Verifier(self.client, get_spec(self.profile))
+        self.gateway = OutboundGateway()
+        self.writer = Writer(get_spec(self.profile))
 
     async def answer(self, question: str) -> Answer:
+        # Privacy gateway check
+        if not self.gateway.check(question):
+            return Answer(
+                text="I cannot answer that due to privacy restrictions.",
+                claims=[],
+                sources=[],
+                confidence="low",
+                notes=["blocked by privacy gateway"],
+                level_used=int(get_spec(self.profile).level),
+            )
+
         route = self.router.route(question)
         console.print(f"[dim]Route: {route.value}[/dim]")
 
@@ -42,6 +57,7 @@ class AGAN:
         draft = await self.reasoner.execute(question, plan)
         report = await self.verifier.verify(draft.text, plan)
         final = self.reasoner.finalize(draft, report)
+        final = self.writer.write(final, report, plan)
         return final
 
 
@@ -62,7 +78,7 @@ async def chat(
             ans = await agan.answer(q)
             console.print(f"[bold green]AGAN:[/bold green] {ans.text}")
             if ans.sources:
-                console.print("[dim]Sources: " + ", ".join(s["url"] for s in ans.sources) + "[/dim]")
+                console.print("[dim]Sources: " + ", ".join(s.get("id", "?") for s in ans.sources) + "[/dim]")
         except (KeyboardInterrupt, EOFError):
             break
 
