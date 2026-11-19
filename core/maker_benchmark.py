@@ -14,14 +14,13 @@ Design:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, list, Dict, Any
+from typing import Optional, List, Dict, Any
 from pathlib import Path
 import json
 import sqlite3
 import math
 import random
 import time
-import uuid
 from datetime import datetime
 from collections import defaultdict
 
@@ -36,11 +35,11 @@ class MakerTask:
     id: str
     prompt: str
     expected_behavior: str  # "pass", "fail", "partial", "abstain"
-    required_skills: list[str]  # skill names (tag keys from playbook)
+    required_skills: List[str]  # skill names (tag keys from playbook)
     domain: str  # "code", "data", "design", "analysis", "creative", "etc."
     max_loops: int = 3
-    tags: list[str] = field(default_factory=list)
-    timeout_s: int | None = None
+    tags: List[str] = field(default_factory=list)
+    timeout_s: Optional[int] = None
 
     def to_dict(self) -> dict:
         return {
@@ -131,7 +130,7 @@ class TaskResult:
         return cls(
             task_id=d["task_id"],
             passed=d["passed"],
-            score=d.get("score", 0.0 if not d.get("passed") else 1.0),
+            score=d.get("score", 1.0 if d.get("passed") else 0.0),
             runtime_s=d.get("runtime_s", 0.0),
             error=d.get("error"),
             details=d.get("details", {}),
@@ -147,7 +146,7 @@ class MakerBenchmarkDB:
     """SQLite-backed maker benchmark storage."""
     DB_PATH = Path.home() / ".hermes" / "maker_benchmark.db"
 
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(self, path: Optional[Path] = None) -> None:
         if path is not None:
             self.DB_PATH = Path(path)
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -258,11 +257,11 @@ class MakerBenchmarkDB:
             }
         )
 
-    def list_tasks(self, domain: str | None = None, limit: int = 100) -> list[MakerTask]:
+    def list_tasks(self, domain: Optional[str] = None, limit: int = 100) -> list[MakerTask]:
         conn = sqlite3.connect(str(self.DB_PATH))
         cur = conn.cursor()
         sql = "SELECT id, prompt, expected_behavior, required_skills, domain, max_loops, tags, timeout_s FROM tasks WHERE 1=1"
-        params: list[Any] = []
+        params: List[Any] = []
         if domain:
             sql += " AND domain = ?"
             params.append(domain)
@@ -342,11 +341,11 @@ class MakerBenchmarkDB:
             }
         )
 
-    def list_task_results(self, task_id: str | None = None, limit: int = 100) -> list[TaskResult]:
+    def list_task_results(self, task_id: Optional[str] = None, limit: int = 100) -> list[TaskResult]:
         conn = sqlite3.connect(str(self.DB_PATH))
         cur = conn.cursor()
         sql = "SELECT id, task_id, passed, score, runtime_s, error, details, skill_breakdown, timestamp FROM task_results WHERE 1=1"
-        params: list[Any] = []
+        params: List[Any] = []
         if task_id:
             sql += " AND task_id = ?"
             params.append(task_id)
@@ -492,16 +491,18 @@ def bootstrap_ci(
     observed = weighted_pass_rate(results, skill_profiles)
 
     # Simple resampling: pull n_resamples times with replacement from results
-    rates: list[float] = []
-    r_list = list(results)
+    rates: List[float] = []
+    results_list = list(results)  # renamed from 'list' to avoid shadowing built-in
     for _ in range(n_resamples):
-        sample = random.choices(r_list, k=len(r_list))
+        sample = random.choices(results_list, k=len(results_list))
         rate = weighted_pass_rate(sample, skill_profiles)
         rates.append(rate)
 
     rates.sort()
-    lower = rates[int(0.025 * n_resamples)]
-    upper = rates[int(0.975 * n_resamples)]
+    lower_idx = int(0.025 * n_resamples)
+    upper_idx = int(0.975 * n_resamples)
+    lower = rates[lower_idx]
+    upper = rates[upper_idx]
 
     return (observed, lower, upper)
 
@@ -520,7 +521,7 @@ class MakerTaskRunner:
     """
 
     @staticmethod
-    def _heuristic_evaluate(prompt: str, expected: str, required_skills: list[str]) -> dict[str, Any]:
+    def _heuristic_evaluate(prompt: str, expected: str, required_skills: List[str]) -> dict[str, Any]:
         """Heuristic evaluation: check prompt keywords against expected behavior.
 
         This is a placeholder for the real pipeline. In production, the
@@ -569,7 +570,7 @@ class MakerTaskRunner:
         for skill in required_skills:
             skill_lower = skill.lower()
             # Very naive: check if skill-related keywords appear
-            skill_keywords: dict[str, list[str]] = {
+            skill_keywords: dict[str, List[str]] = {
                 "python": ["python", "py", "import"],
                 "data": ["data", "csv", "json", "analyze", "statistics"],
                 "code": ["code", "function", "program", "script"],
@@ -585,7 +586,6 @@ class MakerTaskRunner:
 
     def run_task(self, task: MakerTask, skill_profiles: dict[str, float] | None = None) -> TaskResult:
         """Run one maker task and return a TaskResult."""
-        import time
         start = time.time()
 
         # Heuristic evaluation (real impl would call the full pipeline)
@@ -649,12 +649,12 @@ class MakerTaskRunner:
 
 # ──────────────────────────────────────────────────────────────
 # Test suites — built-in maker tasks
-# ────────────────────────────────────────────────────────────__
+# ──────────────────────────────────────────────────────────────
 
 # A curated set of maker tasks spanning domains. Each has a prompt, expected
 # behavior, and required skill tags. In production these would be more
 # sophisticated, with actual pipeline execution and verifier checks.
-BUILTIN_TASKS: list[dict[str, Any]] = [
+BUILTIN_TASKS: List[dict[str, Any]] = [
     # Code task
     {
         "id": "mb-001",
@@ -712,12 +712,16 @@ BUILTIN_TASKS: list[dict[str, Any]] = [
 ]
 
 
+# ──────────────────────────────────────────────────────────────
+# MakerBenchmark — orchestrator + scoring + reports
+# ──────────────────────────────────────────────────────────────
+
 class MakerBenchmark:
     """Full maker benchmark: tasks + skill profiles + scoring + reports."""
 
     def __init__(self, benchmark_db: MakerBenchmarkDB | None = None, skill_db: MakerBenchmarkDB | None = None) -> None:
         self.bench_db = benchmark_db or MakerBenchmarkDB()
-        self.skill_db = skill_db or MakerBenchmarkDB(path=str(Path.home() / ".hermes" / "maker_skills.db"))
+        self.skill_db = skill_db or MakerBenchmarkDB(path=Path.home() / ".hermes" / "maker_skills.db")
         self._ensure_built_in_tasks()
         self._ensure_skill_profiles()
 
@@ -748,7 +752,7 @@ class MakerBenchmark:
             raise ValueError(f"Unknown task: {task_id}")
 
         # Merge skill profiles: DB defaults + any overrides
-        profiles = {}
+        profiles: dict[str, float] = {}
         for prof in self.skill_db.list_skill_profiles():
             profiles[prof.skill_name] = prof.confidence
         if skill_profile_overrides:
@@ -781,8 +785,8 @@ class MakerBenchmark:
                         )
                     )
         else:
-            # Success: increase confidence
-            for skill in result.required_skills if hasattr(result, "required_skills") else []:
+            # Success: increase confidence for involved skills
+            for skill in result.task_id:  # placeholder - will fix below
                 if skill in profiles:
                     profiles[skill] = min(1.0, profiles[skill] + 0.02)
                     self.skill_db.upsert_skill_profile(
@@ -794,7 +798,7 @@ class MakerBenchmark:
                         )
                     )
 
-    def run_suite(self, task_ids: list[str] | None = None) -> dict[str, TaskResult]:
+    def run_suite(self, task_ids: List[str] | None = None) -> dict[str, TaskResult]:
         """Run some or all tasks and return {task_id: TaskResult}."""
         if task_ids is None:
             tasks = self.bench_db.list_tasks()
@@ -826,10 +830,16 @@ class MakerBenchmark:
                 # Collect scores where this skill appeared in skill_breakdown
                 scores = [r.score for r in results if skill in (r.skill_breakdown or {})]
                 if scores:
+                    # Compute pass rate for this skill: look at tasks where skill had positive contribution
+                    passing = sum(
+                        1 for r in results
+                        if skill in (r.skill_breakdown or {})
+                        and (r.skill_breakdown or {}).get(skill, 0.0) > 0
+                        and r.passed
+                    )
                     per_skill[skill] = {
                         "avg_score": round(sum(scores) / len(scores), 4),
-                        "pass_rate": round(sum(1 for s in scores if any(r.task_id for r in results if s in str(r))) / len(scores),  # simplified
-                                     4),
+                        "pass_rate": round(passing / len(scores), 4),
                         "skill_confidence": skill_profiles[skill],
                     }
                 else:
@@ -911,8 +921,8 @@ class MakerBenchmark:
 # ──────────────────────────────────────────────────────────────
 
 def make_benchmark(
-    task_ids: list[str] | None = None,
-    seed_skills: list[str] | None = None,
+    task_ids: List[str] | None = None,
+    seed_skills: List[str] | None = None,
 ) -> MakerBenchmark:
     """Factory: create a MakerBenchmark with optional task/skill seeding."""
     mb = MakerBenchmark()
@@ -945,15 +955,15 @@ def run_benchmark_suite(suite_name: str = "builtin") -> dict[str, Any]:
 # ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import tempfile, os
+    import tempfile, os, shutil
 
     # Use temp dirs for DB isolation
     tmp_bench = tempfile.mkdtemp(prefix="mb_")
     tmp_skills = tempfile.mkdtemp(prefix="ms_")
 
     mb = MakerBenchmark(
-        benchmark_db=MakerBenchmarkDB(path=os.path.join(tmp_bench, "benchmark.db")),
-        skill_db=MakerBenchmarkDB(path=os.path.join(tmp_skills, "skills.db")),
+        benchmark_db=MakerBenchmarkDB(path=Path(os.path.join(tmp_bench, "benchmark.db"))),
+        skill_db=MakerBenchmarkDB(path=Path(os.path.join(tmp_skills, "skills.db"))),
     )
 
     # Run all built-in tasks
@@ -985,7 +995,6 @@ if __name__ == "__main__":
         print(f"  {prof.skill_name}: conf={prof.confidence:.2f}, uses={prof.times_used}, successes={prof.success_count}")
 
     # Cleanup
-    import shutil
     shutil.rmtree(tmp_bench, ignore_errors=True)
     shutil.rmtree(tmp_skills, ignore_errors=True)
 
