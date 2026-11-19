@@ -20,6 +20,7 @@ eggs/
 parts/
 var/
 *.egg-info/
+eval/reports/
 .installed.cfg
 *.egg
 
