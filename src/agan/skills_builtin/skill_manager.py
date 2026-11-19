@@ -65,9 +65,9 @@ class SkillManager:
 
         # Update reputation based on outcome
         if result and result.success:
-            self.reputation[skill.name] = min(1.0, reputation + 0.05)
+            self.reputation[skill.name] = min(1.0, self.reputation.get(skill.name, 1.0) + 0.05)
         elif result and not result.success:
-            self.reputation[skill.name] = max(0.0, reputation - 0.1)
+            self.reputation[skill.name] = max(0.0, self.reputation.get(skill.name, 1.0) - 0.1)
 
         # If top skill failed reasonably low, try next candidate
         if result and not result.success and len(candidates) > 1:
