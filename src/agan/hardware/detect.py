@@ -22,6 +22,11 @@ class ProfileSpec:
     time_budget: int
     best_of_n: int
     max_context: int
+    max_output_tokens: int = 512
+    max_retrieval: int = 5
+    enable_execution: bool = True
+    execution_timeout_s: int = 30
+    level: int = 1
 
 
 SPECS = {

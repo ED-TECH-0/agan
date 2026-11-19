@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from agan.hardware.detect import HardwareProfile, detect_profile
+from agan.hardware.detect import HardwareProfile, detect_profile, get_spec
 from agan.llm.client import LLMClient
 from agan.pipeline.router import Router
 from agan.pipeline.planner import Planner
@@ -26,11 +26,11 @@ class AGAN:
         self.client = LLMClient(base_url="http://localhost:11434/v1", model=self.model)
         self.router = Router(self.client)
         self.planner = Planner(self.client)
-        self.reasoner = Reasoner(self.client, self.profile)
-        self.verifier = Verifier(self.client)
+        self.reasoner = Reasoner(self.client, get_spec(self.profile))
+        self.verifier = Verifier(self.client, get_spec(self.profile))
 
     async def answer(self, question: str) -> Answer:
-        route = await self.router.route(question)
+        route = self.router.route(question)
         console.print(f"[dim]Route: {route.value}[/dim]")
 
         if route == Route.direct:
@@ -40,7 +40,7 @@ class AGAN:
             console.print(f"[dim]Plan: {len(plan.steps)} steps[/dim]")
 
         draft = await self.reasoner.execute(question, plan)
-        report = await self.verifier.verify(draft, plan)
+        report = await self.verifier.verify(draft.text, plan)
         final = self.reasoner.finalize(draft, report)
         return final
 
@@ -83,7 +83,7 @@ def _run_chat(model: str | None = None, profile: str | None = None):
                 ans = await agan.answer(q)
                 console.print(f"[bold green]AGAN:[/bold green] {ans.text}")
                 if ans.sources:
-                    console.print("[dim]Sources: " + ", ".join(s["url"] for s in ans.sources) + "[/dim]")
+                    console.print("[dim]Sources: " + ", ".join(s.get("id", "?") for s in ans.sources) + "[/dim]")
             except (KeyboardInterrupt, EOFError):
                 break
     

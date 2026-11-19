@@ -1,10 +1,12 @@
-from typing import Optional, List, Dict, Any, Protocol
+from typing import Optional, List, Dict, Any, Protocol, Literal
 import json
 import re
 import ast
 import subprocess
 import sys
 from pathlib import Path
+from pydantic import BaseModel
+from agan.schemas import Claim
 
 
 class ExecutionReport(BaseModel):
@@ -14,14 +16,6 @@ class ExecutionReport(BaseModel):
     output: str = ""
     error: str = ""
     duration_ms: int = 0
-
-
-class Claim(BaseModel):
-    """A factual claim extracted from an answer."""
-    text: str
-    evidence_ids: List[str] = []
-    label: Literal["verified", "partial", "unverified"] = "unverified"
-    score: float = 0.0
 
 
 class VerifierReport(BaseModel):
@@ -35,7 +29,7 @@ class VerifierReport(BaseModel):
 class Verifier:
     """Verifier checks claims against evidence and runs executable code."""
     
-    def __init__(self, sandbox, profile):
+    def __init__(self, sandbox=None, profile=None):
         self.sandbox = sandbox
         self.profile = profile
     
@@ -184,7 +178,20 @@ class Verifier:
             missing_query=self._generate_missing_query(claims) if not ok else None,
             execution=execution
         )
-    
+
+    async def verify(self, draft_text: str, plan) -> VerifierReport:
+        """Verify a draft answer against evidence from the plan."""
+        evidence_texts = []
+        if plan and hasattr(plan, "evidence"):
+            for ev in plan.evidence:
+                if hasattr(ev, "text"):
+                    evidence_texts.append(ev.text)
+                elif isinstance(ev, dict):
+                    evidence_texts.append(ev.get("text", ""))
+                elif isinstance(ev, str):
+                    evidence_texts.append(ev)
+        return await self.verify_claims(draft_text, evidence_texts)
+
     async def _execute_code(self, code: str) -> ExecutionReport:
         """Execute code in the sandbox with limitations."""
         start = __import__('time').perf_counter()

@@ -9,6 +9,7 @@ from agan.privacy.firewall import OutboundGateway
 from agan.tools.registry import ToolRegistry
 from agan.safety.sanitizer import sanitize_input
 from agan.skills_builtin import SkillManager, SkillResult
+from .skill_executor import SkillExecutor
 
 
 class Reasoner:
@@ -35,7 +36,7 @@ class Reasoner:
                 return Answer(
                     text="I cannot search for this due to privacy restrictions.",
                     confidence="low",
-                    level_used=self.profile.level.value
+                    level_used=self.profile.level
                 )
 
             evidence_results = await self.retrieval(question, max_results=self.profile.max_retrieval)
@@ -60,7 +61,7 @@ class Reasoner:
         )
 
         # Step 5: Sanitize and extract
-        text = self.safety.sanitize_text(text)
+        text = self.safety(text)
 
         # Step 6: Verify claims
         claims = await self._verify_draft(text, evidence_texts)
@@ -76,7 +77,7 @@ class Reasoner:
             claims=claims,
             sources=sources,
             confidence=confidence,
-            level_used=self.profile.level.value
+            level_used=self.profile.level
         )
 
     def _check_privacy(self, question: str) -> bool:
@@ -139,7 +140,7 @@ Instructions:
 2. For facts about the world, cite your evidence sources using [E1], [E2], etc.
 3. For exact calculations, write and run code - never compute mentally.
 4. If the evidence does not support a claim, say "I could not verify this."
-5. Match the user's level ({self.profile.level.value}) and style (balanced).
+5. Match the user's level ({self.profile.level}) and style (balanced).
 6. Include code blocks for any calculations or scripts.
 7. If uncertain, say "I could not verify this."
 
@@ -292,3 +293,27 @@ Answer:"""
         for name, output in skill_results.items():
             parts.append(f"  [{name}]: {output[:300]}")
         return "\n".join(parts)
+
+    def finalize(self, draft, report) -> Answer:
+        """Produce final answer from draft and verification report."""
+        from agan.schemas import Answer
+
+        if report.ok:
+            return Answer(
+                text=draft.text,
+                claims=draft.claims,
+                sources=draft.sources,
+                confidence=draft.confidence,
+                notes=draft.notes,
+                level_used=draft.level_used,
+            )
+        # Verification failed — append a caveat
+        caveat = "\n\n[Note: Some claims could not be fully verified.]"
+        return Answer(
+            text=draft.text + caveat,
+            claims=draft.claims,
+            sources=draft.sources,
+            confidence="low",
+            notes=draft.notes + ["verification_failed"],
+            level_used=draft.level_used,
+        )
