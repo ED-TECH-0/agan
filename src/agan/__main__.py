@@ -15,6 +15,7 @@ from agan.pipeline.reasoner import Reasoner
 from agan.pipeline.verifier import Verifier, VerifierReport
 from agan.pipeline.writer import Writer
 from agan.privacy.firewall import OutboundGateway
+from agan.sandbox import SandboxRunner
 from agan.schemas import Answer, Plan, Route
 
 app = typer.Typer(add_completion=False)
@@ -29,7 +30,7 @@ class AGAN:
         self.router = Router(self.client)
         self.planner = Planner(self.client)
         self.reasoner = Reasoner(self.client, get_spec(self.profile))
-        self.verifier = Verifier(self.client, get_spec(self.profile))
+        self.verifier = Verifier(sandbox=SandboxRunner(), profile=get_spec(self.profile))
         self.gateway = OutboundGateway()
         self.writer = Writer(get_spec(self.profile))
 
@@ -60,27 +61,6 @@ class AGAN:
         final = self.writer.write(final, report, plan)
         return final
 
-
-@app.command()
-async def chat(
-    model: str = typer.Option(None, "--model", help="Model name (default: profile default)"),
-    profile: str = typer.Option(None, "--profile", help="Hardware profile: S, M, L"),
-):
-    """Interactive chat."""
-    hw = HardwareProfile[profile.upper()] if profile else None
-    agan = AGAN(profile=hw, model=model)
-    console.print(f"[green]AGAN ready[/green] — model: {agan.model}, profile: {agan.profile.name}")
-    while True:
-        try:
-            q = console.input("[bold cyan]You:[/bold cyan] ").strip()
-            if not q or q.lower() in {"exit", "quit"}:
-                break
-            ans = await agan.answer(q)
-            console.print(f"[bold green]AGAN:[/bold green] {ans.text}")
-            if ans.sources:
-                console.print("[dim]Sources: " + ", ".join(s.get("id", "?") for s in ans.sources) + "[/dim]")
-        except (KeyboardInterrupt, EOFError):
-            break
 
 
 def _run_chat(model: str | None = None, profile: str | None = None):
