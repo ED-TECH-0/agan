@@ -93,13 +93,17 @@ class SkillProfile:
 
     @classmethod
     def from_dict(cls, d: dict) -> "SkillProfile":
+        c = d.get("created")
+        created = c if isinstance(c, datetime) else (datetime.fromisoformat(d["created"]) if d.get("created") else datetime.now())
+        last = d.get("last_used")
+        last_used = last if isinstance(last, datetime) else (datetime.fromisoformat(d["last_used"]) if d.get("last_used") else None)
         return cls(
             skill_name=d["skill_name"],
             confidence=d.get("confidence", 0.5),
             times_used=d.get("times_used", 0),
             success_count=d.get("success_count", 0),
-            last_used=datetime.fromisoformat(d["last_used"]) if d.get("last_used") else None,
-            created=datetime.fromisoformat(d["created"]) if d.get("created") else datetime.now(),
+            last_used=last,
+            created=created,
         )
 
 
@@ -370,31 +374,31 @@ class MakerBenchmarkDB:
         ]
 
     def upsert_skill_profile(self, profile: SkillProfile) -> None:
-        conn = sqlite3.connect(str(self.DB_PATH))
-        cur = conn.cursor()
-        data = profile.to_dict()
-        cur.execute(
-            """
-            INSERT INTO skill_profiles (skill_name, confidence, times_used, success_count, last_used, created)
-            VALUES (:skill_name, :confidence, :times_used, :success_count, :last_used, :created)
-            ON CONFLICT(skill_name) DO UPDATE SET
-                confidence = :confidence,
-                times_used = times_used + 1,
-                success_count = success_count + :success_delta,
-                last_used = :last_used
-            """,
-            {
-                "skill_name": data["skill_name"],
-                "confidence": data["confidence"],
-                "times_used": data["times_used"],
-                "success_count": data["success_count"],
-                "last_used": data["last_used"].isoformat() if data["last_used"] else None,
-                "created": data["created"].isoformat(),
-                "success_delta": 1 if data["success_count"] > 0 else 0,
-            },
-        )
-        conn.commit()
-        conn.close()
+            conn = sqlite3.connect(str(self.DB_PATH))
+            cur = conn.cursor()
+            data = profile.to_dict()
+            cur.execute(
+                """
+                INSERT INTO skill_profiles (skill_name, confidence, times_used, success_count, last_used, created)
+                VALUES (:skill_name, :confidence, :times_used, :success_count, :last_used, :created)
+                ON CONFLICT(skill_name) DO UPDATE SET
+                    confidence = :confidence,
+                    times_used = times_used + 1,
+                    success_count = success_count + :success_delta,
+                    last_used = :last_used
+                """,
+                {
+                    "skill_name": data["skill_name"],
+                    "confidence": data["confidence"],
+                    "times_used": data["times_used"],
+                    "success_count": data["success_count"],
+                    "last_used": data["last_used"],  # already isoformat string from to_dict()
+                    "created": data["created"],       # already isoformat string from to_dict()
+                    "success_delta": 1 if data["success_count"] > 0 else 0,
+                },
+            )
+            conn.commit()
+            conn.close()
 
     def get_skill_profile(self, skill_name: str) -> SkillProfile | None:
         conn = sqlite3.connect(str(self.DB_PATH))
