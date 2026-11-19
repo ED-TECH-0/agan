@@ -1,7 +1,6 @@
 """Heading-aware text chunking for retrieval."""
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 from agan.schemas import Chunk
 
@@ -102,7 +101,7 @@ def chunk_text(
     url: str,
     fetched_at: float,
     trust: float = 0.5,
-    version_tag: Optional[str] = None,
+    version_tag: str | None = None,
     chunk_size: int = 500,
     chunk_overlap: int = 50,
 ) -> list[Chunk]:
@@ -162,4 +161,4 @@ def chunk_code_blocks(text: str, url: str, fetched_at: float, trust: float = 0.5
     return chunks
 
 
-__all__ = ["chunk_text", "chunk_code_blocks", "ChunkResult", "_estimate_tokens"]
+__all__ = ["ChunkResult", "_estimate_tokens", "chunk_code_blocks", "chunk_text"]

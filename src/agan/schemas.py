@@ -89,6 +89,17 @@ class Answer(BaseModel):
     level_used: int = 1
 
 
+class SearchHit(BaseModel):
+    """A single search result from a retrieval provider."""
+
+    url: str
+    title: str = ""
+    snippet: str = ""
+    source: str = ""  # provider name, e.g. "wikipedia", "searxng"
+    fetched_at: float = 0.0
+    trust: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
 class Skill(BaseModel):
     id: str
     name: str

@@ -1,16 +1,13 @@
 """HTTP fetching with SSRF protection, robots.txt compliance, and rate limiting."""
 import asyncio
+import ipaddress
 import time
 from dataclasses import dataclass
-from typing import Optional
-from urllib.parse import urlparse, urljoin
-import ipaddress
+from urllib.parse import urlparse
 
 import httpx
 import trafilatura
 from trafilatura.settings import use_config
-
-from agan.schemas import Chunk
 
 # Global rate limiter per domain
 _domain_locks: dict[str, asyncio.Lock] = {}
@@ -59,7 +56,7 @@ async def _resolve_host(host: str) -> list[str]:
         return []
 
 
-def _check_ssrf(url: str) -> Optional[str]:
+def _check_ssrf(url: str) -> str | None:
     """Check URL for SSRF risks. Returns error message if blocked, None if OK."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
@@ -164,12 +161,12 @@ class FetchResult:
     final_url: str
     status_code: int
     content_type: str
-    etag: Optional[str] = None
-    last_modified: Optional[str] = None
-    error: Optional[str] = None
+    etag: str | None = None
+    last_modified: str | None = None
+    error: str | None = None
 
 
-async def fetch_url(url: str, *, conditional: bool = False, etag: Optional[str] = None, last_modified: Optional[str] = None) -> FetchResult:
+async def fetch_url(url: str, *, conditional: bool = False, etag: str | None = None, last_modified: str | None = None) -> FetchResult:
     """Fetch a URL with SSRF protection, robots.txt, rate limiting, and conditional requests."""
     # SSRF check
     ssrf_error = _check_ssrf(url)
@@ -269,4 +266,4 @@ async def fetch_and_extract(url: str) -> tuple[str, FetchResult]:
     return text, result
 
 
-__all__ = ["fetch_url", "extract_text", "fetch_and_extract", "FetchResult", "_check_ssrf", "_get_robots_rules", "_rate_limit"]
+__all__ = ["FetchResult", "_check_ssrf", "_get_robots_rules", "_rate_limit", "extract_text", "fetch_and_extract", "fetch_url"]

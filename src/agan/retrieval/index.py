@@ -1,16 +1,13 @@
 """SQLite FTS5 + vector search index for retrieval."""
 import asyncio
 import sqlite3
-import struct
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
 from agan.schemas import Chunk
-
 
 DB_PATH = Path.home() / ".agan" / "retrieval.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -191,7 +188,7 @@ async def get_chunks_by_ids(ids: list[str]) -> list[Chunk]:
         ) for row in rows]
 
 
-async def get_page_info(url: str) -> Optional[dict]:
+async def get_page_info(url: str) -> dict | None:
     """Get cached page metadata."""
     with _get_conn() as conn:
         row = conn.execute("SELECT * FROM pages WHERE url = ?", (url,)).fetchone()
@@ -215,7 +212,15 @@ async def prune_old_cache(max_age_days: int = 30):
 
 
 __all__ = [
-    "add_chunks", "keyword_search", "vector_search", "hybrid_search",
-    "get_chunks_by_ids", "get_page_info", "update_page_trust", "prune_old_cache",
-    "embed_texts", "DB_PATH", "VECTOR_DIM",
+    "DB_PATH",
+    "VECTOR_DIM",
+    "add_chunks",
+    "embed_texts",
+    "get_chunks_by_ids",
+    "get_page_info",
+    "hybrid_search",
+    "keyword_search",
+    "prune_old_cache",
+    "update_page_trust",
+    "vector_search",
 ]

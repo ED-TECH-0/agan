@@ -10,17 +10,21 @@ from urllib.parse import quote_plus, urlencode
 
 import httpx
 
-from agan.retrieval.fetch import fetch_url, extract_text
+from agan.retrieval.fetch import extract_text, fetch_url
 
 
 @dataclass
 class SearchHit:
+    """A single search result from a retrieval provider."""
+
     url: str
     title: str
     snippet: str
     score: float = 0.0
     source: str = ""
-    version_tag: Optional[str] = None
+    version_tag: str | None = None
+    trust: float = 0.5
+    fetched_at: float = 0.0
 
 
 class SearchProvider(ABC):
@@ -106,7 +110,7 @@ class WikipediaProvider(SearchProvider):
 
 class StackExchangeProvider(SearchProvider):
     """Stack Exchange API (Stack Overflow, etc.)."""
-    def __init__(self, site: str = "stackoverflow", timeout: float = 10.0, key: Optional[str] = None):
+    def __init__(self, site: str = "stackoverflow", timeout: float = 10.0, key: str | None = None):
         self.site = site
         self.timeout = timeout
         self.key = key
@@ -267,7 +271,7 @@ class SearchManager:
         self,
         query: str,
         max_results: int = 10,
-        providers: Optional[list[str]] = None,
+        providers: list[str] | None = None,
     ) -> list[SearchHit]:
         """Search across multiple providers."""
         if providers is None:
@@ -302,7 +306,7 @@ class SearchManager:
 
 
 # Global search manager instance
-_search_manager: Optional[SearchManager] = None
+_search_manager: SearchManager | None = None
 
 
 def get_search_manager() -> SearchManager:
@@ -319,7 +323,7 @@ async def close_search_manager():
         _search_manager = None
 
 
-async def search_all(query: str, max_results: int = 10) -> List[dict]:
+async def search_all(query: str, max_results: int = 10) -> list[dict]:
     """Search across all available retrieval providers.
 
     Args:
@@ -338,8 +342,16 @@ async def search_all(query: str, max_results: int = 10) -> List[dict]:
 
 
 __all__ = [
-    "SearchHit", "SearchProvider", "SearchManager",
-    "SearXNGProvider", "WikipediaProvider", "StackExchangeProvider",
-    "GitHubProvider", "ArxivProvider", "DocSiteProvider",
-    "get_search_manager", "close_search_manager", "search_all",
+    "ArxivProvider",
+    "DocSiteProvider",
+    "GitHubProvider",
+    "SearXNGProvider",
+    "SearchHit",
+    "SearchManager",
+    "SearchProvider",
+    "StackExchangeProvider",
+    "WikipediaProvider",
+    "close_search_manager",
+    "get_search_manager",
+    "search_all",
 ]
