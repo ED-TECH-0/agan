@@ -1,12 +1,10 @@
 from typing import Optional, List, Dict, Any, Protocol, Literal
 import json
 import re
-import ast
-import subprocess
-import sys
-from pathlib import Path
+import time
 from pydantic import BaseModel
 from agan.schemas import Claim
+from agan.sandbox import SandboxRunner
 
 
 class ExecutionReport(BaseModel):
@@ -27,10 +25,10 @@ class VerifierReport(BaseModel):
 
 
 class Verifier:
-    """Verifier checks claims against evidence and runs executable code."""
-    
+    """Verifier checks claims against evidence and runs executable code in a sandbox."""
+
     def __init__(self, sandbox=None, profile=None):
-        self.sandbox = sandbox
+        self.sandbox = sandbox or SandboxRunner()
         self.profile = profile
     
     def _extract_claims(self, text: str) -> List[Claim]:
@@ -101,10 +99,10 @@ class Verifier:
                     best_score = score
                     best_evidence = evidence
             
-            if best_score >= 0.80:
+            if best_score >= 0.60:
                 claim.label = "verified"
                 claim.score = best_score
-            elif best_score >= 0.50:
+            elif best_score >= 0.25:
                 claim.label = "partial"
                 claim.score = best_score
             else:
@@ -194,45 +192,34 @@ class Verifier:
 
     async def _execute_code(self, code: str) -> ExecutionReport:
         """Execute code in the sandbox with limitations."""
-        start = __import__('time').perf_counter()
-        
+        start = time.perf_counter()
+
         try:
-            # Execute with timeout and memory limits
-            result = subprocess.run(
-                [sys.executable, "-c", code],
-                capture_output=True, text=True,
-                timeout=self.profile.execution_timeout_s,
-                cwd=self.sandbox.work_dir if self.sandbox else None
-            )
-            
-            duration_ms = int((__import__('time').perf_counter() - start) * 1000)
-            
-            ok = result.returncode == 0
+            timeout = self.profile.execution_timeout_s if self.profile else 30
+            result = self.sandbox.run(code, timeout_s=timeout)
+
+            duration_ms = int((time.perf_counter() - start) * 1000)
+
+            ok = result.ok
             output = result.stdout[-500:] if len(result.stdout) > 500 else result.stdout
             error = result.stderr[-500:] if len(result.stderr) > 500 else result.stderr
-            
+            if result.error:
+                error = result.error + (" | " + error if error else "")
+
             return ExecutionReport(
                 ran=True,
                 ok=ok,
                 output=output,
                 error=error,
-                duration_ms=duration_ms
-            )
-        except subprocess.TimeoutExpired:
-            duration_ms = int((__import__('time').perf_counter() - start) * 1000)
-            return ExecutionReport(
-                ran=True,
-                ok=False,
-                error=f"Code execution timed out after {self.profile.execution_timeout_s}s",
-                duration_ms=duration_ms
+                duration_ms=duration_ms,
             )
         except Exception as e:
-            duration_ms = int((__import__('time').perf_counter() - start) * 1000)
+            duration_ms = int((time.perf_counter() - start) * 1000)
             return ExecutionReport(
                 ran=True,
                 ok=False,
                 error=str(e),
-                duration_ms=duration_ms
+                duration_ms=duration_ms,
             )
     
     def _generate_missing_query(self, claims: List[Claim]) -> Optional[str]:
