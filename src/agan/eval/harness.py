@@ -3,7 +3,7 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+
 import numpy as np
 import pytest
 from datasets import load_dataset
@@ -179,7 +179,7 @@ class EvalHarness:
         self.results: list[BaselineResult] = []
 
     def record(self, name: str, value: float, unit: str, target: float,
-               details: Optional[dict] = None, higher_is_better: Optional[bool] = None):
+               details: dict | None = None, higher_is_better: bool | None = None):
         if higher_is_better is None:
             higher_is_better = any(k in name.lower() for k in (
                 "rate", "precision", "recall", "score", "accuracy", "hit",
